@@ -1,0 +1,54 @@
+[
+  {
+    "domain": ".reddit.com",
+    "expirationDate": 1735689600,
+    "hostOnly": false,
+    "httpOnly": true,
+    "name": "reddit_session",
+    "path": "/",
+    "sameSite": "no_restriction",
+    "secure": true,
+    "session": false,
+    "storeId": "0",
+    "value": "YOUR_SESSION_VALUE_HERE"
+  },
+  {
+    "domain": ".reddit.com",
+    "expirationDate": 1735689600,
+    "hostOnly": false,
+    "httpOnly": false,
+    "name": "token_v2",
+    "path": "/",
+    "sameSite": "no_restriction",
+    "secure": true,
+    "session": false,
+    "storeId": "0",
+    "value": "YOUR_TOKEN_VALUE_HERE"
+  },
+  {
+    "domain": ".reddit.com",
+    "expirationDate": 1735689600,
+    "hostOnly": false,
+    "httpOnly": false,
+    "name": "loid",
+    "path": "/",
+    "sameSite": "lax",
+    "secure": true,
+    "session": false,
+    "storeId": "0",
+    "value": "YOUR_LOID_VALUE_HERE"
+  },
+  {
+    "domain": ".reddit.com",
+    "expirationDate": 1735689600,
+    "hostOnly": false,
+    "httpOnly": false,
+    "name": "edgebucket",
+    "path": "/",
+    "sameSite": "lax",
+    "secure": true,
+    "session": false,
+    "storeId": "0",
+    "value": "YOUR_EDGEBUCKET_VALUE_HERE"
+  }
+]

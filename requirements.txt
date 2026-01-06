@@ -1,0 +1,33 @@
+# Core dependencies
+pandas>=2.0.0
+python-dotenv>=1.0.0
+
+# HuggingFace
+huggingface-hub>=0.19.0
+
+# Reddit
+praw>=7.7.0
+
+# Web scraping
+selenium>=4.15.0
+beautifulsoup4>=4.12.0
+webdriver-manager>=4.0.0  # 自动管理浏览器驱动
+
+# Utilities
+tenacity>=8.2.0
+requests>=2.31.0
+pyyaml>=6.0.0
+
+# Excel support (optional but recommended)
+openpyxl>=3.1.0
+
+# Web interface
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Development dependencies (optional)
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+# black>=23.0.0
+# flake8>=6.0.0
+# mypy>=1.5.0

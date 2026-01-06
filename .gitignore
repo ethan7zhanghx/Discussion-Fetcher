@@ -1,0 +1,66 @@
+# 环境变量和配置
+.env
+*.env
+
+# Cookies（包含登录凭证，不要提交）
+cookies.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+ENV/
+env/
+
+# 数据文件
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+data/*.csv
+data/*.xlsx
+data/backup/
+data/exports/
+data/html_debug/
+data/temp_uploads/
+*.csv
+*.xlsx
+*.xls
+
+# 日志
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# 调试用的 HTML（但保留 web/templates/）
+reddit-*.html
+*.html
+!web/templates/*.html

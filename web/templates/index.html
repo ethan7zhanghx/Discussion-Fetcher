@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiscussionFetcher - ERNIE 讨论数据抓取</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header>
+            <h1>📊 DiscussionFetcher</h1>
+            <p class="subtitle">Reddit、HuggingFace、Twitter 多平台讨论数据管理系统</p>
+        </header>
+
+        <!-- 统计面板 -->
+        <section class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-value" id="total-count">-</div>
+                <div class="stat-label">总讨论数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="reddit-count">-</div>
+                <div class="stat-label">Reddit</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="huggingface-count">-</div>
+                <div class="stat-label">HuggingFace</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="twitter-count">-</div>
+                <div class="stat-label">Twitter</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="last-update">-</div>
+                <div class="stat-label">最后更新</div>
+            </div>
+        </section>
+
+        <!-- 操作面板 -->
+        <section class="action-panel">
+            <div class="card">
+                <h2>🚀 抓取数据</h2>
+
+                <div class="form-group">
+                    <label>选择平台：</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" id="platform-reddit" checked>
+                            Reddit
+                        </label>
+                        <label>
+                            <input type="checkbox" id="platform-huggingface" checked>
+                            HuggingFace
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="reddit-search-mode-group">
+                    <label>Reddit 搜索方式：</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="radio" name="reddit-search-mode" value="subreddits" checked>
+                            特定子版块（9个AI相关版块）
+                        </label>
+                        <label>
+                            <input type="radio" name="reddit-search-mode" value="global">
+                            全局搜索（整个Reddit）
+                        </label>
+                    </div>
+                    <small>提示：全局搜索适合小众话题（如 PaddleOCR-VL），特定版块适合热门话题（如 ERNIE）</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="search-query">搜索关键词：</label>
+                    <input type="text" id="search-query" value="ERNIE" placeholder="输入关键词...">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="include-comments">
+                        获取 Reddit 评论（需要 cookies.json）
+                    </label>
+                    <small id="cookies-status"></small>
+                </div>
+
+                <button id="start-fetch-btn" class="btn btn-primary">
+                    开始抓取
+                </button>
+
+                <div id="fetch-status" class="status-message" style="display: none;"></div>
+
+                <!-- 实时日志输出 -->
+                <div id="fetch-log-container" style="display: none; margin-top: 15px;">
+                    <h3 style="font-size: 1rem; margin-bottom: 10px;">📋 抓取日志</h3>
+                    <div id="fetch-log" class="fetch-log"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>💾 导出数据</h2>
+
+                <div class="form-group">
+                    <label>导出格式：</label>
+                    <select id="export-format">
+                        <option value="csv">CSV</option>
+                        <option value="excel">Excel</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>平台筛选：</label>
+                    <select id="export-platform">
+                        <option value="">全部</option>
+                        <option value="reddit">Reddit</option>
+                        <option value="huggingface">HuggingFace</option>
+                        <option value="twitter">Twitter</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>关键词筛选：</label>
+                    <select id="export-keywords">
+                        <option value="">全部关键词</option>
+                    </select>
+                </div>
+
+                <button id="export-btn" class="btn btn-secondary">
+                    导出数据
+                </button>
+            </div>
+
+            <div class="card">
+                <h2>📤 导入 Twitter 数据</h2>
+                <p class="help-text">支持导入 Twitter CSV 文件（帖子和评论）</p>
+
+                <div class="form-group">
+                    <label>搜索关键词（可选）：</label>
+                    <input type="text" id="twitter-keywords" placeholder="例如: ERNIE, PaddleOCR-VL">
+                    <small class="help-text">用于标记导入的数据，方便后续筛选</small>
+                </div>
+
+                <div class="form-group">
+                    <label>选择 CSV 文件：</label>
+                    <input type="file" id="twitter-csv-file" accept=".csv" multiple>
+                    <small class="help-text">可以选择多个文件同时导入</small>
+                </div>
+
+                <button id="import-twitter-btn" class="btn btn-primary" disabled>
+                    导入 Twitter CSV
+                </button>
+
+                <div id="import-status" class="status-message" style="display: none;"></div>
+
+                <div class="help-text" style="margin-top: 15px;">
+                    <details>
+                        <summary style="cursor: pointer; font-weight: bold;">📖 CSV 格式要求</summary>
+                        <div style="margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                            <p><strong>必填字段：</strong></p>
+                            <ul style="margin: 5px 0; padding-left: 20px;">
+                                <li>ID - 推文ID</li>
+                                <li>链接 - 推文URL</li>
+                                <li>发布日期 - 发布时间</li>
+                                <li>内容 - 推文内容</li>
+                                <li>用户名 - 发推用户</li>
+                            </ul>
+                            <p><strong>如何区分帖子和评论：</strong></p>
+                            <ul style="margin: 5px 0; padding-left: 20px;">
+                                <li>帖子：回复推文 ID 为空</li>
+                                <li>评论：回复推文 ID 有值</li>
+                            </ul>
+                            <p style="margin-top: 10px;">
+                                <a href="/TWITTER_IMPORT_GUIDE.md" target="_blank">📚 查看完整导入指南</a>
+                            </p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <!-- 搜索面板 -->
+        <section class="search-panel">
+            <div class="card">
+                <h2>🔍 搜索讨论</h2>
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="搜索标题或内容...">
+                    <button id="search-btn" class="btn btn-primary">搜索</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 数据列表 -->
+        <section class="data-panel">
+            <div class="card">
+                <div class="panel-header">
+                    <h2>📝 最近讨论</h2>
+                    <div class="filter-controls">
+                        <select id="filter-platform">
+                            <option value="">全部平台</option>
+                            <option value="reddit">Reddit</option>
+                            <option value="huggingface">HuggingFace</option>
+                            <option value="twitter">Twitter</option>
+                        </select>
+                        <select id="filter-type">
+                            <option value="">全部类型</option>
+                            <option value="post">帖子</option>
+                            <option value="comment">评论</option>
+                            <option value="discussion">讨论</option>
+                        </select>
+                        <select id="filter-keywords">
+                            <option value="">全部关键词</option>
+                        </select>
+                        <button id="refresh-btn" class="btn btn-secondary">刷新</button>
+                    </div>
+                </div>
+
+                <div id="discussions-list" class="discussions-list">
+                    <p class="loading">加载中...</p>
+                </div>
+
+                <div class="pagination">
+                    <button id="prev-page" class="btn btn-secondary" disabled>上一页</button>
+                    <span id="page-info">第 1 页</span>
+                    <button id="next-page" class="btn btn-secondary">下一页</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 底部 -->
+        <footer>
+            <p>DiscussionFetcher v2.0 |
+                <a href="https://github.com" target="_blank">GitHub</a> |
+                <a href="/api/stats" target="_blank">API 文档</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
