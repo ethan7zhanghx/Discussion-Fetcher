@@ -20,8 +20,11 @@ from src.huggingface import HuggingFaceFetcher
 app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
 CORS(app)
 
-# 全局变量
-db = DatabaseManager()
+# 获取项目根目录（web_server.py 所在目录的父目录）
+PROJECT_ROOT = Path(__file__).parent.resolve()
+
+# 全局变量 - 使用绝对路径
+db = DatabaseManager(db_path=str(PROJECT_ROOT / 'data' / 'discussions.db'))
 fetch_status = {
     'running': False,
     'platform': None,
@@ -129,7 +132,7 @@ def export_data():
             parts.append(search_keywords.replace(' ', '_'))
         parts.append(timestamp)
         filename = f'{"_".join(parts)}.{format_type}'
-        filepath = Path('./data/exports') / filename
+        filepath = PROJECT_ROOT / 'data' / 'exports' / filename
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         # 导出
@@ -280,7 +283,7 @@ def fetch_worker(platforms, query, include_comments, reddit_search_mode='subredd
 @app.route('/api/cookies/check')
 def check_cookies():
     """检查 cookies 文件是否存在"""
-    cookies_path = Path('./cookies.json')
+    cookies_path = PROJECT_ROOT / 'cookies.json'
     return jsonify({
         'success': True,
         'exists': cookies_path.exists()
@@ -315,7 +318,7 @@ def import_twitter_csv():
         search_keywords = request.form.get('keywords', None)
 
         # 创建临时目录
-        temp_dir = Path('./data/temp_uploads')
+        temp_dir = PROJECT_ROOT / 'data' / 'temp_uploads'
         temp_dir.mkdir(parents=True, exist_ok=True)
 
         # 保存文件
