@@ -10,7 +10,7 @@
     <div class="container">
         <!-- 头部 -->
         <header>
-            <h1>📊 DiscussionFetcher</h1>
+            <h1>DiscussionFetcher</h1>
             <p class="subtitle">Reddit、HuggingFace、Twitter 多平台讨论数据管理系统</p>
         </header>
 
@@ -41,7 +41,7 @@
         <!-- 操作面板 -->
         <section class="action-panel">
             <div class="card">
-                <h2>🚀 抓取数据</h2>
+                <h2>抓取数据</h2>
 
                 <div class="form-group">
                     <label>选择平台：</label>
@@ -93,13 +93,13 @@
 
                 <!-- 实时日志输出 -->
                 <div id="fetch-log-container" style="display: none; margin-top: 15px;">
-                    <h3 style="font-size: 1rem; margin-bottom: 10px;">📋 抓取日志</h3>
+                    <h3 style="font-size: 1rem; margin-bottom: 10px; font-weight: 600;">抓取日志</h3>
                     <div id="fetch-log" class="fetch-log"></div>
                 </div>
             </div>
 
             <div class="card">
-                <h2>💾 导出数据</h2>
+                <h2>导出数据</h2>
 
                 <div class="form-group">
                     <label>导出格式：</label>
@@ -132,7 +132,7 @@
             </div>
 
             <div class="card">
-                <h2>📤 导入 Twitter 数据</h2>
+                <h2>导入 Twitter 数据</h2>
                 <p class="help-text">支持导入 Twitter CSV 文件（帖子和评论）</p>
 
                 <div class="form-group">
@@ -155,8 +155,8 @@
 
                 <div class="help-text" style="margin-top: 15px;">
                     <details>
-                        <summary style="cursor: pointer; font-weight: bold;">📖 CSV 格式要求</summary>
-                        <div style="margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                        <summary style="cursor: pointer; font-weight: 600; color: var(--text-primary);">CSV 格式要求</summary>
+                        <div style="margin-top: 10px; padding: 15px; background: var(--bg-primary); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
                             <p><strong>必填字段：</strong></p>
                             <ul style="margin: 5px 0; padding-left: 20px;">
                                 <li>ID - 推文ID</li>
@@ -171,7 +171,7 @@
                                 <li>评论：回复推文 ID 有值</li>
                             </ul>
                             <p style="margin-top: 10px;">
-                                <a href="/TWITTER_IMPORT_GUIDE.md" target="_blank">📚 查看完整导入指南</a>
+                                <a href="/TWITTER_IMPORT_GUIDE.md" target="_blank">查看完整导入指南</a>
                             </p>
                         </div>
                     </details>
@@ -182,7 +182,7 @@
         <!-- 搜索面板 -->
         <section class="search-panel">
             <div class="card">
-                <h2>🔍 搜索讨论</h2>
+                <h2>搜索讨论</h2>
                 <div class="search-bar">
                     <input type="text" id="search-input" placeholder="搜索标题或内容...">
                     <button id="search-btn" class="btn btn-primary">搜索</button>
@@ -194,7 +194,7 @@
         <section class="data-panel">
             <div class="card">
                 <div class="panel-header">
-                    <h2>📝 最近讨论</h2>
+                    <h2>最近讨论</h2>
                     <div class="filter-controls">
                         <select id="filter-platform">
                             <option value="">全部平台</option>
