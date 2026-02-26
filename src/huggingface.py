@@ -273,16 +273,18 @@ class HuggingFaceFetcher(BaseFetcher):
         # Apply strict filter if enabled
         if strict_filter:
             original_count = len(model_ids)
+            # Strip quotes from query for filtering
+            clean_query = query.strip('"\'')
             # Filter: model_id must contain the query string (case-insensitive)
             model_ids = [
                 model_id for model_id in model_ids
-                if query.lower() in model_id.lower()
+                if clean_query.lower() in model_id.lower()
             ]
 
             if len(model_ids) < original_count:
                 filtered_out = original_count - len(model_ids)
                 self.logger.info(
-                    f"Strict filter: removed {filtered_out} models not matching '{query}' exactly"
+                    f"Strict filter: removed {filtered_out} models not matching '{clean_query}' exactly"
                 )
 
         if not model_ids:

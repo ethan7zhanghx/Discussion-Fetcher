@@ -56,12 +56,6 @@ function setupEventListeners() {
         loadDiscussions();
     });
 
-    document.getElementById('filter-type').addEventListener('change', (e) => {
-        currentFilters.contentType = e.target.value;
-        currentPage = 1;
-        loadDiscussions();
-    });
-
     document.getElementById('filter-keywords').addEventListener('change', (e) => {
         currentFilters.searchKeywords = e.target.value;
         currentPage = 1;
@@ -157,10 +151,10 @@ async function loadDiscussions() {
 
     try {
         const params = new URLSearchParams({
+            only_posts: 'true',  // 只获取帖子
             limit: pageSize,
             offset: (currentPage - 1) * pageSize,
             ...(currentFilters.platform && { platform: currentFilters.platform }),
-            ...(currentFilters.contentType && { content_type: currentFilters.contentType }),
             ...(currentFilters.searchKeywords && { search_keywords: currentFilters.searchKeywords })
         });
 
@@ -197,7 +191,18 @@ function renderDiscussions(discussions) {
         if (item.platform === 'reddit') platformBadge = 'badge-reddit';
         if (item.platform === 'twitter') platformBadge = 'badge-twitter';
 
-        const typeBadge = item.content_type === 'post' ? 'badge-post' : 'badge-comment';
+        // 新评论标注
+        const hasNewComments = item.has_new_comments && item.comment_count > 0;
+        const newCommentsBadge = hasNewComments
+            ? `<span class="badge badge-new-comments">💬 ${item.comment_count} 条评论（有更新）</span>`
+            : item.comment_count > 0
+            ? `<span class="badge badge-comments">💬 ${item.comment_count} 条评论</span>`
+            : '';
+
+        // 最新评论时间
+        const latestCommentTime = item.latest_comment_at
+            ? `<span>最新评论: ${formatDate(new Date(item.latest_comment_at))}</span>`
+            : '';
 
         div.innerHTML = `
             <div class="discussion-header">
@@ -205,12 +210,15 @@ function renderDiscussions(discussions) {
                     <div class="discussion-title">${escapeHtml(item.title || '无标题')}</div>
                     <div class="discussion-meta">
                         <span class="badge ${platformBadge}">${item.platform}</span>
-                        <span class="badge ${typeBadge}">${item.content_type}</span>
                         <span>作者: ${escapeHtml(item.author || '未知')}</span>
                         ${item.score !== null && item.score !== undefined ? `<span>⭐ ${item.score}</span>` : ''}
                         ${item.likes !== null && item.likes !== undefined ? `<span>❤️ ${item.likes}</span>` : ''}
                         ${item.retweets !== null && item.retweets !== undefined ? `<span>🔁 ${item.retweets}</span>` : ''}
                         <span>📅 ${formatDate(new Date(item.created_at))}</span>
+                    </div>
+                    <div class="discussion-meta-comments">
+                        ${newCommentsBadge}
+                        ${latestCommentTime}
                     </div>
                 </div>
             </div>

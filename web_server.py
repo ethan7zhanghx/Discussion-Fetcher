@@ -71,14 +71,25 @@ def get_discussions():
         search_keywords = request.args.get('search_keywords')
         limit = int(request.args.get('limit', 100))
         offset = int(request.args.get('offset', 0))
+        only_posts = request.args.get('only_posts', 'false').lower() == 'true'
 
-        discussions = db.query_discussions(
-            platform=platform,
-            content_type=content_type,
-            search_keywords=search_keywords,
-            limit=limit,
-            offset=offset
-        )
+        if only_posts:
+            # 只返回帖子，包含评论统计
+            discussions = db.query_posts_with_comments_stats(
+                platform=platform,
+                search_keywords=search_keywords,
+                limit=limit,
+                offset=offset
+            )
+        else:
+            # 返回所有讨论（兼容旧版）
+            discussions = db.query_discussions(
+                platform=platform,
+                content_type=content_type,
+                search_keywords=search_keywords,
+                limit=limit,
+                offset=offset
+            )
 
         return jsonify({
             'success': True,
