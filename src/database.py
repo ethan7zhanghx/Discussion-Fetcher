@@ -1131,6 +1131,151 @@ class DatabaseManager:
 
         return result
 
+    def query_posts_with_comments_stats(
+        self,
+        platform: Optional[str] = None,
+        search_keywords: Optional[str] = None,
+        limit: Optional[int] = 100,
+        offset: int = 0
+    ) -> List[Dict]:
+        """
+        查询帖子及其评论统计信息（用于前端展示，只显示帖子）
+
+        Args:
+            platform: 平台筛选
+            search_keywords: 搜索关键词筛选
+            limit: 返回记录数
+            offset: 偏移量
+
+        Returns:
+            字典列表，每条记录包含：
+            - 帖子信息（所有字段）
+            - comment_count: 该帖子的评论总数
+            - latest_comment_at: 最新评论时间
+            - has_new_comments: 是否有新评论（基于 latest_comment_at 和 created_at 判断）
+        """
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        # 主查询：获取帖子信息
+        main_query = '''
+            SELECT
+                d.db_id,
+                d.platform_id as id,
+                d.platform,
+                d.content,
+                d.url,
+                d.created_at,
+                d.fetched_at,
+                d.source,
+                d.search_keywords,
+                COALESCE(r.author, h.author, t.author) as author,
+                COALESCE(r.title, h.title) as title,
+                COALESCE(r.content_type, h.content_type, t.content_type) as content_type,
+                r.score,
+                r.subreddit,
+                r.permalink,
+                t.likes,
+                t.retweets
+            FROM discussions d
+            LEFT JOIN reddit_discussions r ON d.db_id = r.db_id
+            LEFT JOIN huggingface_discussions h ON d.db_id = h.db_id
+            LEFT JOIN twitter_discussions t ON d.db_id = t.db_id
+            WHERE (r.content_type = 'post' OR h.content_type = 'discussion' OR t.content_type = 'post')
+        '''
+        params = []
+
+        if platform:
+            main_query += ' AND d.platform = ?'
+            params.append(platform)
+
+        if search_keywords:
+            main_query += ' AND d.search_keywords = ?'
+            params.append(search_keywords)
+
+        # 按最新评论时间排序（活跃度排序）
+        # 使用子查询获取每个帖子的最新评论时间
+        main_query += '''
+            ORDER BY COALESCE(
+                (SELECT MAX(d2.created_at)
+                 FROM discussions d2
+                 LEFT JOIN reddit_discussions r2 ON d2.db_id = r2.db_id
+                 LEFT JOIN huggingface_discussions h2 ON d2.db_id = h2.db_id
+                 WHERE (r2.parent_id = d.platform_id OR h2.parent_id = d.platform_id)
+                ),
+                d.created_at
+            ) DESC
+            LIMIT ? OFFSET ?
+        '''
+        params.extend([limit, offset])
+
+        cursor.execute(main_query, params)
+        rows = cursor.fetchall()
+
+        result = []
+
+        # 为每个帖子查询评论统计
+        for row in rows:
+            post_dict = dict(row)
+            post_id = post_dict['id']
+            post_platform = post_dict['platform']
+
+            # 查询该帖子的评论
+            if post_platform == 'reddit':
+                comment_query = '''
+                    SELECT
+                        COUNT(*) as comment_count,
+                        MAX(d2.created_at) as latest_comment_at
+                    FROM discussions d2
+                    LEFT JOIN reddit_discussions r2 ON d2.db_id = r2.db_id
+                    WHERE r2.parent_id = ?
+                '''
+            elif post_platform == 'huggingface':
+                comment_query = '''
+                    SELECT
+                        COUNT(*) as comment_count,
+                        MAX(d2.created_at) as latest_comment_at
+                    FROM discussions d2
+                    LEFT JOIN huggingface_discussions h2 ON d2.db_id = h2.db_id
+                    WHERE h2.parent_id = ?
+                '''
+            else:  # twitter
+                comment_query = '''
+                    SELECT
+                        COUNT(*) as comment_count,
+                        MAX(d2.created_at) as latest_comment_at
+                    FROM discussions d2
+                    LEFT JOIN twitter_discussions t2 ON d2.db_id = t2.db_id
+                    WHERE t2.parent_id = ?
+                '''
+
+            cursor.execute(comment_query, (post_id,))
+            comment_stats = cursor.fetchone()
+
+            if comment_stats:
+                comment_count = comment_stats['comment_count']
+                latest_comment_at = comment_stats['latest_comment_at']
+
+                post_dict['comment_count'] = comment_count
+                post_dict['latest_comment_at'] = latest_comment_at
+
+                # 判断是否有新评论（最新评论时间晚于帖子创建时间）
+                if latest_comment_at:
+                    post_created_at = datetime.fromisoformat(post_dict['created_at'].replace('Z', '+00:00'))
+                    latest_comment_dt = datetime.fromisoformat(latest_comment_at.replace('Z', '+00:00'))
+                    post_dict['has_new_comments'] = latest_comment_dt > post_created_at
+                else:
+                    post_dict['has_new_comments'] = False
+            else:
+                post_dict['comment_count'] = 0
+                post_dict['latest_comment_at'] = None
+                post_dict['has_new_comments'] = False
+
+            result.append(post_dict)
+
+        conn.close()
+        return result
+
     def search_discussions(
         self,
         keyword: str,
@@ -1139,6 +1284,13 @@ class DatabaseManager:
     ) -> List[Dict]:
         """
         搜索讨论
+
+        搜索范围:
+        - 讨论内容 (content)
+        - 标题 (title)
+        - 搜索关键词标签 (search_keywords)
+        - HuggingFace 模型 ID (model_id)
+        - Reddit 子版块 (subreddit)
 
         Args:
             keyword: 搜索关键词
@@ -1161,21 +1313,27 @@ class DatabaseManager:
                 d.created_at,
                 d.fetched_at,
                 d.source,
+                d.search_keywords,
                 COALESCE(r.author, h.author) as author,
                 COALESCE(r.title, h.title) as title,
                 COALESCE(r.content_type, h.content_type) as content_type,
                 r.score,
-                r.subreddit
+                r.subreddit,
+                h.model_id
             FROM discussions d
             LEFT JOIN reddit_discussions r ON d.db_id = r.db_id
             LEFT JOIN huggingface_discussions h ON d.db_id = h.db_id
             WHERE (
                 d.content LIKE ? OR
                 r.title LIKE ? OR
-                h.title LIKE ?
+                h.title LIKE ? OR
+                d.search_keywords LIKE ? OR
+                h.model_id LIKE ? OR
+                r.subreddit LIKE ?
             )
         '''
-        params = [f'%{keyword}%', f'%{keyword}%', f'%{keyword}%']
+        params = [f'%{keyword}%', f'%{keyword}%', f'%{keyword}%',
+                  f'%{keyword}%', f'%{keyword}%', f'%{keyword}%']
 
         if platform:
             query += ' AND d.platform = ?'

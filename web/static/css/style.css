@@ -503,6 +503,35 @@ small, .help-text {
     color: white;
 }
 
+.badge-comments {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.badge-new-comments {
+    background: linear-gradient(135deg, var(--success-color), #5CB811);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.discussion-meta-comments {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
 .discussion-content {
     color: var(--text-secondary);
     margin-top: var(--spacing-sm);
